@@ -44,9 +44,19 @@ JWT_REFRESH_SECRET="change-me-too"
 Pastikan PostgreSQL jalan dan database `labin_db` sudah ada, lalu:
 
 ```powershell
-npm run prisma:migrate --prefix backend
+npm run db:migrate
 npm run seed
 ```
+
+Kalau pakai Docker:
+
+```powershell
+docker compose up -d
+npm run db:migrate
+npm run seed
+```
+
+Catatan mesin ini saat dikonfigurasi belum punya PostgreSQL lokal, `psql`, atau Docker, jadi migrasi belum dieksekusi di database lokal. File `.env`, Prisma Client, dan migration SQL sudah siap.
 
 Seed login:
 
