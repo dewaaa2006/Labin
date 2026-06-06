@@ -1,0 +1,314 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id             String             @id @default(uuid())
+  name           String
+  email          String             @unique
+  nim            String?            @unique
+  password       String
+  role           Role               @default(STUDENT)
+  university     String?
+  faculty        String?
+  studyProgram   String?
+  phone          String?
+  avatarUrl      String?
+  isActive       Boolean            @default(true)
+  resetToken     String?            @unique
+  resetExpiresAt DateTime?
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+  loans          Loan[]
+  bookings       Booking[]
+  reports        DamageReport[]
+  shifts         StaffShift[]
+  attendances    Attendance[]
+  notifications  Notification[]
+  refreshTokens  RefreshToken[]
+}
+
+enum Role {
+  STUDENT
+  LECTURER
+  STAFF
+  ADMIN
+}
+
+model RefreshToken {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+}
+
+model Equipment {
+  id             String             @id @default(uuid())
+  name           String
+  category       EquipmentCategory
+  description    String
+  specifications String?
+  totalStock     Int                @default(1)
+  availableStock Int                @default(1)
+  condition      EquipmentCondition @default(GOOD)
+  imageUrl       String?
+  isActive       Boolean            @default(true)
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+  loans          Loan[]
+}
+
+enum EquipmentCategory {
+  COMPUTER
+  STUDIO
+  NETWORK
+  MULTIMEDIA
+  ELECTRONICS
+  MEASUREMENT
+  OTHER
+}
+
+enum EquipmentCondition {
+  GOOD
+  FAIR
+  DAMAGED
+  UNDER_REPAIR
+  RETIRED
+}
+
+model Loan {
+  id           String     @id @default(uuid())
+  trackingId   String     @unique
+  userId       String
+  user         User       @relation(fields: [userId], references: [id])
+  equipmentId  String
+  equipment    Equipment  @relation(fields: [equipmentId], references: [id])
+  quantity     Int        @default(1)
+  borrowDate   DateTime
+  returnDate   DateTime
+  actualReturn DateTime?
+  purpose      String
+  status       LoanStatus @default(PENDING)
+  documentUrl  String?
+  adminNote    String?
+  approvedBy   String?
+  approvedAt   DateTime?
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+}
+
+enum LoanStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  TAKEN
+  RETURNED
+  CANCELLED
+  OVERDUE
+}
+
+model Room {
+  id          String       @id @default(uuid())
+  name        String
+  code        String       @unique
+  capacity    Int
+  floor       String?
+  building    String?
+  facilities  String[]
+  description String?
+  imageUrl    String?
+  isActive    Boolean      @default(true)
+  createdAt   DateTime     @default(now())
+  bookings    Booking[]
+  shifts      StaffShift[]
+}
+
+model Booking {
+  id           String        @id @default(uuid())
+  trackingId   String        @unique
+  userId       String
+  user         User          @relation(fields: [userId], references: [id])
+  roomId       String
+  room         Room          @relation(fields: [roomId], references: [id])
+  date         DateTime      @db.Date
+  startTime    String
+  endTime      String
+  activityName String
+  activityType ActivityType
+  participants Int
+  notes        String?
+  status       BookingStatus @default(PENDING)
+  adminNote    String?
+  approvedBy   String?
+  approvedAt   DateTime?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+}
+
+enum ActivityType {
+  LECTURE
+  PRACTICUM
+  RESEARCH
+  ORGANIZATION
+  EXAM
+  OTHER
+}
+
+enum BookingStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  CANCELLED
+  ONGOING
+  DONE
+}
+
+model Announcement {
+  id          String               @id @default(uuid())
+  title       String
+  content     String
+  category    AnnouncementCategory
+  isPinned    Boolean              @default(false)
+  isPublished Boolean              @default(true)
+  authorId    String
+  attachments String[]
+  viewCount   Int                  @default(0)
+  publishedAt DateTime?
+  createdAt   DateTime             @default(now())
+  updatedAt   DateTime             @updatedAt
+}
+
+enum AnnouncementCategory {
+  GENERAL
+  MAINTENANCE
+  RECRUITMENT
+  WARNING
+  EVENT
+}
+
+model DamageReport {
+  id             String       @id @default(uuid())
+  trackingId     String       @unique
+  userId         String
+  user           User         @relation(fields: [userId], references: [id])
+  location       String
+  facilityName   String
+  description    String
+  urgency        Urgency
+  status         ReportStatus @default(RECEIVED)
+  photos         String[]
+  technicianNote String?
+  resolvedAt     DateTime?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+}
+
+enum Urgency {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum ReportStatus {
+  RECEIVED
+  IN_PROGRESS
+  RESOLVED
+  CLOSED
+}
+
+model StaffShift {
+  id         String      @id @default(uuid())
+  userId     String
+  user       User        @relation(fields: [userId], references: [id])
+  roomId     String
+  room       Room        @relation(fields: [roomId], references: [id])
+  date       DateTime    @db.Date
+  startTime  String
+  endTime    String
+  shiftType  ShiftType   @default(REGULAR)
+  notes      String?
+  createdAt  DateTime    @default(now())
+  attendance Attendance?
+}
+
+enum ShiftType {
+  REGULAR
+  SUBSTITUTE
+  OVERTIME
+}
+
+model Attendance {
+  id        String           @id @default(uuid())
+  userId    String
+  user      User             @relation(fields: [userId], references: [id])
+  shiftId   String           @unique
+  shift     StaffShift       @relation(fields: [shiftId], references: [id])
+  checkIn   DateTime?
+  checkOut  DateTime?
+  method    AttendanceMethod @default(MANUAL)
+  latitude  Float?
+  longitude Float?
+  notes     String?
+  createdAt DateTime         @default(now())
+}
+
+enum AttendanceMethod {
+  QR
+  GPS
+  MANUAL
+}
+
+model Notification {
+  id          String           @id @default(uuid())
+  userId      String
+  user        User             @relation(fields: [userId], references: [id])
+  title       String
+  message     String
+  type        NotificationType
+  isRead      Boolean          @default(false)
+  relatedId   String?
+  relatedType String?
+  createdAt   DateTime         @default(now())
+}
+
+enum NotificationType {
+  LOAN_APPROVED
+  LOAN_REJECTED
+  LOAN_REMINDER
+  BOOKING_APPROVED
+  BOOKING_REJECTED
+  BOOKING_REMINDER
+  REPORT_UPDATE
+  ANNOUNCEMENT
+  SHIFT_REMINDER
+  SYSTEM
+}
+
+model StaffApplication {
+  id           String            @id @default(uuid())
+  userId       String
+  motivation   String
+  experience   String?
+  availability String
+  documentUrl  String?
+  status       ApplicationStatus @default(PENDING)
+  reviewNote   String?
+  reviewedBy   String?
+  reviewedAt   DateTime?
+  createdAt    DateTime          @default(now())
+}
+
+enum ApplicationStatus {
+  PENDING
+  REVIEWED
+  ACCEPTED
+  REJECTED
+}

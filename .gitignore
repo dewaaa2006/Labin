@@ -33,6 +33,15 @@ migrate_working_dir/
 /build/
 /coverage/
 
+# Node / full-stack web app
+node_modules/
+**/node_modules/
+dist/
+**/dist/
+.env
+backend/uploads/*
+!backend/uploads/.gitkeep
+
 # Symbolication related
 app.*.symbols
 

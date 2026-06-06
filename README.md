@@ -1,6 +1,92 @@
 # Labin
 
-Prototype mobile app Flutter untuk smart laboratory management.
+Smart Laboratory Management System.
+
+Repo ini berisi:
+
+- Flutter mobile prototype di root `lib/`
+- Full-stack web app di `backend/` dan `frontend/`
+
+## Full-Stack Web App
+
+Stack:
+
+- Backend: Node.js 20, TypeScript, Express, Prisma, PostgreSQL, JWT auth, Multer uploads.
+- Frontend: React 18, Vite, TypeScript, Tailwind, Zustand, TanStack Query, Axios.
+
+### 1. Install
+
+```powershell
+npm install
+npm install --prefix backend
+npm install --prefix frontend
+```
+
+### 2. Env
+
+Copy env:
+
+```powershell
+Copy-Item backend\.env.example backend\.env
+Copy-Item frontend\.env.example frontend\.env
+```
+
+Isi `backend/.env`:
+
+```text
+DATABASE_URL="postgresql://postgres:postgres@localhost:5432/labin_db"
+JWT_ACCESS_SECRET="change-me"
+JWT_REFRESH_SECRET="change-me-too"
+```
+
+### 3. Database
+
+Pastikan PostgreSQL jalan dan database `labin_db` sudah ada, lalu:
+
+```powershell
+npm run prisma:migrate --prefix backend
+npm run seed
+```
+
+Seed login:
+
+```text
+admin@labin.id / Admin123!
+staff1@labin.id / Staff123!
+mahasiswa1@labin.id / Mhs123!
+```
+
+### 4. Run
+
+```powershell
+npm run dev
+```
+
+Backend: `http://localhost:3001`
+
+Frontend: `http://localhost:5173`
+
+### 5. Build
+
+```powershell
+npm run build
+```
+
+### Full-Stack Features
+
+- Register, login, refresh token, logout, forgot/reset password
+- Role guard backend dan frontend: STUDENT, LECTURER, STAFF, ADMIN
+- Equipment catalog, admin inventory
+- Loan request, approve/reject/take/return/cancel
+- Room booking with conflict validation
+- Announcements with broadcast notification
+- Damage reports with staff status update
+- In-app notifications
+- Staff shifts and attendance
+- Admin dashboard, users, analytics, CSV export
+- File upload to `backend/uploads`
+
+## Flutter Mobile Prototype
 
 ## Run tanpa Supabase
 
