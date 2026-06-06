@@ -61,6 +61,20 @@ Register Flutter mengirim metadata:
 
 Trigger `handle_new_user()` otomatis membuat row di tabel `profiles`.
 
+Perilaku app:
+
+- Login hanya berhasil jika email/password valid di Supabase Auth.
+- Register benar-benar membuat user baru di Supabase Auth.
+- Jika email confirmation Supabase aktif, user diminta cek email lalu login setelah verifikasi.
+- Jika email confirmation tidak aktif, Supabase membuat session dan app langsung masuk dashboard.
+- Jika `LABIN_SUPABASE_URL` atau `LABIN_SUPABASE_PUBLISHABLE_KEY` belum diisi, login/register ditolak dan tidak masuk dashboard.
+
+Untuk development yang cepat, bisa matikan sementara email confirmation:
+
+Auth -> Providers -> Email -> Confirm email = off.
+
+Untuk production, aktifkan email confirmation.
+
 ## 5. Google OAuth
 
 Di Supabase Dashboard:

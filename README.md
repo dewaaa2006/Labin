@@ -2,13 +2,13 @@
 
 Prototype mobile app Flutter untuk smart laboratory management.
 
-## Run mode demo
+## Run tanpa Supabase
 
 ```powershell
 flutter run
 ```
 
-Jika Supabase belum dikonfigurasi, login/register akan masuk ke dashboard demo.
+UI tetap bisa dibuka sampai halaman login, tetapi login/register real akan ditolak sampai Supabase dikonfigurasi.
 
 ## Run dengan Supabase
 
@@ -42,6 +42,7 @@ Yang sudah tersambung:
 - Email/password register
 - User metadata saat register: name, nim, university, faculty, study_program, role
 - Google OAuth trigger
+- Logout real dari Supabase
 
 Untuk Google OAuth, aktifkan provider Google di Supabase Auth dan tambahkan redirect URL:
 

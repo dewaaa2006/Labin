@@ -394,18 +394,28 @@ class _AuthScreenState extends State<AuthScreen> {
   bool register = false;
   bool agree = true;
   bool loading = false;
-  final emailController = TextEditingController(text: 'rafi@labin.ac.id');
-  final passwordController = TextEditingController(text: 'password123');
-  final nameController = TextEditingController(text: 'Rafi Aditya');
-  final nimController = TextEditingController(text: '2210511042');
-  final universityController = TextEditingController(text: 'Universitas Labin');
-  final facultyController = TextEditingController(text: 'FIK');
-  final programController = TextEditingController(text: 'Informatika');
+  final emailController = TextEditingController();
+  final passwordController = TextEditingController();
+  final confirmPasswordController = TextEditingController();
+  final nameController = TextEditingController();
+  final nimController = TextEditingController();
+  final universityController = TextEditingController();
+  final facultyController = TextEditingController();
+  final programController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    if (LabinBackend.client?.auth.currentSession != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => _openMain());
+    }
+  }
 
   @override
   void dispose() {
     emailController.dispose();
     passwordController.dispose();
+    confirmPasswordController.dispose();
     nameController.dispose();
     nimController.dispose();
     universityController.dispose();
@@ -442,7 +452,9 @@ class _AuthScreenState extends State<AuthScreen> {
               selectedIndex: register ? 1 : 0,
               onSelected: (index) => setState(() => register = index == 1),
             ),
-            const SizedBox(height: 22),
+            const SizedBox(height: 12),
+            SupabaseConnectionBanner(configured: LabinBackend.initialized),
+            const SizedBox(height: 18),
             if (!register) ...[
               AppTextField(
                 label: 'Email / NIM',
@@ -541,10 +553,11 @@ class _AuthScreenState extends State<AuthScreen> {
                 controller: passwordController,
               ),
               const SizedBox(height: 12),
-              const AppTextField(
+              AppTextField(
                 label: 'Confirm Password',
                 icon: Icons.verified_user_outlined,
                 obscureText: true,
+                controller: confirmPasswordController,
               ),
               const SizedBox(height: 10),
               CheckboxListTile(
@@ -571,16 +584,27 @@ class _AuthScreenState extends State<AuthScreen> {
 
   Future<void> _login() async {
     if (!LabinBackend.initialized) {
-      _openDemo(
-        'Mode demo aktif. Isi Supabase URL dan anon key untuk auth asli.',
+      _showMessage(
+        'Supabase belum dikonfigurasi. Isi LABIN_SUPABASE_URL dan LABIN_SUPABASE_PUBLISHABLE_KEY.',
       );
+      return;
+    }
+
+    final email = emailController.text.trim();
+    final password = passwordController.text;
+    if (!_isValidEmail(email)) {
+      _showMessage('Email belum valid.');
+      return;
+    }
+    if (password.isEmpty) {
+      _showMessage('Password wajib diisi.');
       return;
     }
 
     await _runAuthAction(() async {
       await LabinBackend.client!.auth.signInWithPassword(
-        email: emailController.text.trim(),
-        password: passwordController.text,
+        email: email,
+        password: password,
       );
       _openMain();
     });
@@ -588,32 +612,64 @@ class _AuthScreenState extends State<AuthScreen> {
 
   Future<void> _register() async {
     if (!LabinBackend.initialized) {
-      _openDemo(
-        'Mode demo aktif. Register akan tersambung setelah Supabase dikonfigurasi.',
+      _showMessage(
+        'Supabase belum dikonfigurasi. Register hanya bisa berjalan setelah backend aktif.',
       );
       return;
     }
 
+    final email = emailController.text.trim();
+    final password = passwordController.text;
+    final confirmPassword = confirmPasswordController.text;
+    final name = nameController.text.trim();
+    final nim = nimController.text.trim();
+
+    if (name.isEmpty || nim.isEmpty) {
+      _showMessage('Nama lengkap dan NIM/NPM wajib diisi.');
+      return;
+    }
+    if (!_isValidEmail(email)) {
+      _showMessage('Email kampus belum valid.');
+      return;
+    }
+    if (password.length < 8) {
+      _showMessage('Password minimal 8 karakter.');
+      return;
+    }
+    if (password != confirmPassword) {
+      _showMessage('Konfirmasi password belum sama.');
+      return;
+    }
+
     await _runAuthAction(() async {
-      await LabinBackend.client!.auth.signUp(
-        email: emailController.text.trim(),
-        password: passwordController.text,
+      final response = await LabinBackend.client!.auth.signUp(
+        email: email,
+        password: password,
         data: {
-          'name': nameController.text.trim(),
-          'nim': nimController.text.trim(),
+          'name': name,
+          'nim': nim,
           'university': universityController.text.trim(),
           'faculty': facultyController.text.trim(),
           'study_program': programController.text.trim(),
           'role': 'student',
         },
       );
-      _openMain();
+
+      if (response.session != null) {
+        _openMain();
+        return;
+      }
+
+      setState(() => register = false);
+      _showMessage(
+        'Akun berhasil dibuat. Cek email untuk verifikasi, lalu login.',
+      );
     });
   }
 
   Future<void> _loginWithGoogle() async {
     if (!LabinBackend.initialized) {
-      _openDemo('Mode demo aktif. Google OAuth butuh konfigurasi Supabase.');
+      _showMessage('Google OAuth butuh konfigurasi Supabase.');
       return;
     }
 
@@ -638,12 +694,8 @@ class _AuthScreenState extends State<AuthScreen> {
     }
   }
 
-  void _openDemo(String message) {
-    _showMessage(message);
-    _openMain();
-  }
-
   void _openMain() {
+    if (!mounted) return;
     Navigator.of(context).pushReplacementNamed('/main');
   }
 
@@ -652,6 +704,10 @@ class _AuthScreenState extends State<AuthScreen> {
     ScaffoldMessenger.of(
       context,
     ).showSnackBar(SnackBar(content: Text(message)));
+  }
+
+  bool _isValidEmail(String value) {
+    return RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(value);
   }
 }
 
@@ -1625,6 +1681,7 @@ class ProfileScreen extends StatelessWidget {
                       icon: Icons.logout_rounded,
                       label: 'Keluar',
                       danger: true,
+                      onTap: () => _signOut(context),
                     ),
                   ],
                 ),
@@ -1633,6 +1690,17 @@ class ProfileScreen extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+
+  Future<void> _signOut(BuildContext context) async {
+    if (LabinBackend.initialized) {
+      await LabinBackend.client!.auth.signOut();
+    }
+    if (!context.mounted) return;
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute(builder: (_) => const AuthScreen()),
+      (route) => false,
     );
   }
 }
@@ -2369,6 +2437,51 @@ class AppTextField extends StatelessWidget {
             color: Theme.of(context).dividerColor.withValues(alpha: .35),
           ),
         ),
+      ),
+    );
+  }
+}
+
+class SupabaseConnectionBanner extends StatelessWidget {
+  const SupabaseConnectionBanner({super.key, required this.configured});
+
+  final bool configured;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = configured ? LabinTheme.success : LabinTheme.warning;
+    final text = configured
+        ? 'Backend Supabase aktif. Login dan register memakai akun asli.'
+        : 'Backend belum aktif. Jalankan app dengan URL dan publishable key Supabase.';
+
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: .11),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: color.withValues(alpha: .35)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(
+            configured ? Icons.cloud_done_rounded : Icons.cloud_off_rounded,
+            color: color,
+            size: 20,
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              text,
+              style: TextStyle(
+                color: color,
+                fontSize: 12,
+                fontWeight: FontWeight.w800,
+                height: 1.35,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -3569,12 +3682,14 @@ class ProfileItem extends StatelessWidget {
     required this.icon,
     required this.label,
     this.route,
+    this.onTap,
     this.danger = false,
   });
 
   final IconData icon;
   final String label;
   final String? route;
+  final VoidCallback? onTap;
   final bool danger;
 
   @override
@@ -3588,7 +3703,9 @@ class ProfileItem extends StatelessWidget {
         style: TextStyle(color: color, fontWeight: FontWeight.w700),
       ),
       trailing: const Icon(Icons.chevron_right_rounded),
-      onTap: route == null ? () {} : () => Navigator.pushNamed(context, route!),
+      onTap:
+          onTap ??
+          (route == null ? () {} : () => Navigator.pushNamed(context, route!)),
     );
   }
 }
