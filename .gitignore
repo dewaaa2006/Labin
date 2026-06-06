@@ -39,6 +39,8 @@ node_modules/
 dist/
 **/dist/
 *.tsbuildinfo
+*.db
+*.db-journal
 .env
 backend/uploads/*
 !backend/uploads/.gitkeep

@@ -45,10 +45,10 @@ async function main() {
   );
 
   const rooms = await Promise.all([
-    prisma.room.upsert({ where: { code: 'LAB-KOM-A' }, update: {}, create: { code: 'LAB-KOM-A', name: 'Lab Komputer A', capacity: 40, floor: '2', building: 'Gedung B', facilities: ['AC', 'Proyektor', 'Internet', 'Whiteboard'], description: 'Ruang praktikum pemrograman dan mobile.' } }),
-    prisma.room.upsert({ where: { code: 'LAB-KOM-B' }, update: {}, create: { code: 'LAB-KOM-B', name: 'Lab Komputer B', capacity: 36, floor: '2', building: 'Gedung B', facilities: ['AC', 'Internet'], description: 'Ruang kelas dan praktikum.' } }),
-    prisma.room.upsert({ where: { code: 'LAB-STUDIO' }, update: {}, create: { code: 'LAB-STUDIO', name: 'Lab Studio', capacity: 24, floor: '1', building: 'Gedung C', facilities: ['Lighting', 'Green Screen', 'Audio Interface'], description: 'Ruang produksi konten multimedia.' } }),
-    prisma.room.upsert({ where: { code: 'LAB-JARINGAN' }, update: {}, create: { code: 'LAB-JARINGAN', name: 'Lab Jaringan', capacity: 32, floor: '3', building: 'Gedung B', facilities: ['Rack Server', 'Router', 'Switch', 'Internet'], description: 'Ruang praktikum jaringan.' } }),
+    prisma.room.upsert({ where: { code: 'LAB-KOM-A' }, update: {}, create: { code: 'LAB-KOM-A', name: 'Lab Komputer A', capacity: 40, floor: '2', building: 'Gedung B', facilities: JSON.stringify(['AC', 'Proyektor', 'Internet', 'Whiteboard']), description: 'Ruang praktikum pemrograman dan mobile.' } }),
+    prisma.room.upsert({ where: { code: 'LAB-KOM-B' }, update: {}, create: { code: 'LAB-KOM-B', name: 'Lab Komputer B', capacity: 36, floor: '2', building: 'Gedung B', facilities: JSON.stringify(['AC', 'Internet']), description: 'Ruang kelas dan praktikum.' } }),
+    prisma.room.upsert({ where: { code: 'LAB-STUDIO' }, update: {}, create: { code: 'LAB-STUDIO', name: 'Lab Studio', capacity: 24, floor: '1', building: 'Gedung C', facilities: JSON.stringify(['Lighting', 'Green Screen', 'Audio Interface']), description: 'Ruang produksi konten multimedia.' } }),
+    prisma.room.upsert({ where: { code: 'LAB-JARINGAN' }, update: {}, create: { code: 'LAB-JARINGAN', name: 'Lab Jaringan', capacity: 32, floor: '3', building: 'Gedung B', facilities: JSON.stringify(['Rack Server', 'Router', 'Switch', 'Internet']), description: 'Ruang praktikum jaringan.' } }),
   ]);
 
   const equipmentSeeds = [
@@ -141,7 +141,7 @@ async function main() {
       description: 'Proyektor tidak menampilkan gambar dari HDMI dan lampu indikator berkedip.',
       urgency: 'HIGH',
       status: 'IN_PROGRESS',
-      photos: [],
+      photos: '[]',
     },
   });
 

@@ -3,7 +3,7 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "sqlite"
   url      = env("DATABASE_URL")
 }
 
@@ -121,7 +121,7 @@ model Room {
   capacity    Int
   floor       String?
   building    String?
-  facilities  String[]
+  facilities  String       @default("[]")
   description String?
   imageUrl    String?
   isActive    Boolean      @default(true)
@@ -137,7 +137,7 @@ model Booking {
   user         User          @relation(fields: [userId], references: [id])
   roomId       String
   room         Room          @relation(fields: [roomId], references: [id])
-  date         DateTime      @db.Date
+  date         DateTime
   startTime    String
   endTime      String
   activityName String
@@ -178,7 +178,7 @@ model Announcement {
   isPinned    Boolean              @default(false)
   isPublished Boolean              @default(true)
   authorId    String
-  attachments String[]
+  attachments String               @default("[]")
   viewCount   Int                  @default(0)
   publishedAt DateTime?
   createdAt   DateTime             @default(now())
@@ -203,7 +203,7 @@ model DamageReport {
   description    String
   urgency        Urgency
   status         ReportStatus @default(RECEIVED)
-  photos         String[]
+  photos         String       @default("[]")
   technicianNote String?
   resolvedAt     DateTime?
   createdAt      DateTime     @default(now())
@@ -230,7 +230,7 @@ model StaffShift {
   user       User        @relation(fields: [userId], references: [id])
   roomId     String
   room       Room        @relation(fields: [roomId], references: [id])
-  date       DateTime    @db.Date
+  date       DateTime
   startTime  String
   endTime    String
   shiftType  ShiftType   @default(REGULAR)

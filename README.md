@@ -39,14 +39,19 @@ JWT_ACCESS_SECRET="change-me"
 JWT_REFRESH_SECRET="change-me-too"
 ```
 
-### 3. Database
+### 3. Database Lokal, Paling Gampang
 
-Pastikan PostgreSQL jalan dan database `labin_db` sudah ada, lalu:
+Backend dev sekarang memakai SQLite lokal supaya langsung jalan tanpa XAMPP, PostgreSQL, atau Docker.
 
 ```powershell
-npm run db:migrate
-npm run seed
+npm run db:sqlite
 ```
+
+Command itu membuat `backend/prisma/dev.db` dan mengisi seed data.
+
+### 4. Database PostgreSQL Opsional
+
+Kalau nanti mau kembali ke PostgreSQL production, ubah `backend/prisma/schema.prisma` provider ke `postgresql`, isi `DATABASE_URL`, lalu jalankan migrate Prisma.
 
 Kalau pakai Docker:
 
@@ -66,7 +71,7 @@ staff1@labin.id / Staff123!
 mahasiswa1@labin.id / Mhs123!
 ```
 
-### 4. Run
+### 5. Run
 
 ```powershell
 npm run dev
@@ -76,7 +81,7 @@ Backend: `http://localhost:3001`
 
 Frontend: `http://localhost:5173`
 
-### 5. Build
+### 6. Build
 
 ```powershell
 npm run build
