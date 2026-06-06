@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 
+import 'package:labin/backend/labin_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -129,6 +130,8 @@ class LabinBackend {
     if (!initialized) return null;
     return Supabase.instance.client;
   }
+
+  static LabinRepository get repository => LabinRepository(client: client);
 
   static Future<void> initialize() async {
     if (!SupabaseConfig.isConfigured) return;
@@ -601,7 +604,7 @@ class _AuthScreenState extends State<AuthScreen> {
           'university': universityController.text.trim(),
           'faculty': facultyController.text.trim(),
           'study_program': programController.text.trim(),
-          'role': 'Mahasiswa',
+          'role': 'student',
         },
       );
       _openMain();

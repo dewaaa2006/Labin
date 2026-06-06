@@ -49,6 +49,41 @@ Untuk Google OAuth, aktifkan provider Google di Supabase Auth dan tambahkan redi
 io.supabase.labin://login-callback/
 ```
 
+## Backend Database
+
+Backend lengkap ada di folder:
+
+```text
+supabase/
+```
+
+Isi penting:
+
+- `supabase/migrations/202606060001_initial_labin_backend.sql`: schema, enum, trigger, RLS policy, storage bucket.
+- `supabase/seed.sql`: data awal lab, ruangan, kategori, alat, dan pengumuman.
+- `supabase/README.md`: panduan setup backend dari awal sampai akhir.
+
+Service Flutter untuk akses backend ada di:
+
+```text
+lib/backend/labin_repository.dart
+```
+
+Fitur backend yang sudah disiapkan:
+
+- Auth + profile otomatis
+- Lab, ruangan, fasilitas
+- Kategori alat dan data alat
+- Peminjaman alat + item + dokumen
+- Reservasi ruangan
+- Status tracking
+- Laporan kerusakan + foto
+- Pengumuman + lampiran
+- Favorit
+- Notifikasi
+- Student staff shift, absensi, tugas, laporan harian
+- Support message
+
 ## Verifikasi
 
 ```powershell
