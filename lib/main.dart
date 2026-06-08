@@ -464,9 +464,15 @@ class _AuthScreenState extends State<AuthScreen> {
   @override
   void initState() {
     super.initState();
+    _refreshBackendStatus();
     if (LabinBackend.accessToken != null) {
       WidgetsBinding.instance.addPostFrameCallback((_) => _openMain());
     }
+  }
+
+  Future<void> _refreshBackendStatus() async {
+    await LabinBackend.initialize();
+    if (mounted) setState(() {});
   }
 
   @override

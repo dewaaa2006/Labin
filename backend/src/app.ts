@@ -20,15 +20,16 @@ export const app = express();
 
 const allowedOrigins = new Set([
   env.frontendUrl,
-  'http://localhost:5173',
-  'http://127.0.0.1:5173',
 ]);
+
+const allowedDevOriginPattern =
+  /^http:\/\/(localhost|127\.0\.0\.1|(10|172\.(1[6-9]|2\d|3[0-1])|192\.168)\.\d{1,3}\.\d{1,3}):\d+$/;
 
 app.use(cors({
   origin(origin, callback) {
     if (!origin) return callback(null, true);
     if (allowedOrigins.has(origin)) return callback(null, true);
-    if (/^http:\/\/(10|172\.(1[6-9]|2\d|3[0-1])|192\.168)\.\d{1,3}\.\d{1,3}:5173$/.test(origin)) {
+    if (allowedDevOriginPattern.test(origin)) {
       return callback(null, true);
     }
     return callback(new Error(`CORS blocked origin: ${origin}`));
