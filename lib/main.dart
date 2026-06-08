@@ -1,8 +1,8 @@
 import 'dart:math' as math;
+import 'dart:convert';
 
-import 'package:labin/backend/labin_repository.dart';
 import 'package:flutter/material.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:http/http.dart' as http;
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -113,34 +113,92 @@ class LabinTheme {
   );
 }
 
-class SupabaseConfig {
-  static const url = String.fromEnvironment('LABIN_SUPABASE_URL');
-  static const publishableKey = String.fromEnvironment(
-    'LABIN_SUPABASE_PUBLISHABLE_KEY',
-    defaultValue: String.fromEnvironment('LABIN_SUPABASE_ANON_KEY'),
+class ApiConfig {
+  static const url = String.fromEnvironment(
+    'LABIN_API_URL',
+    defaultValue: 'http://10.152.101.101:3001/api',
   );
 
-  static bool get isConfigured => url.isNotEmpty && publishableKey.isNotEmpty;
+  static bool get isConfigured => url.isNotEmpty;
 }
 
 class LabinBackend {
   static bool initialized = false;
-
-  static SupabaseClient? get client {
-    if (!initialized) return null;
-    return Supabase.instance.client;
-  }
-
-  static LabinRepository get repository => LabinRepository(client: client);
+  static String? accessToken;
+  static Map<String, dynamic>? currentUser;
 
   static Future<void> initialize() async {
-    if (!SupabaseConfig.isConfigured) return;
+    try {
+      final response = await http
+          .get(Uri.parse('${ApiConfig.url}/health'))
+          .timeout(const Duration(seconds: 3));
+      initialized = response.statusCode == 200;
+    } catch (_) {
+      initialized = false;
+    }
+  }
 
-    await Supabase.initialize(
-      url: SupabaseConfig.url,
-      publishableKey: SupabaseConfig.publishableKey,
+  static Future<void> login({
+    required String email,
+    required String password,
+  }) async {
+    final data = await _post('/auth/login', {
+      'email': email,
+      'password': password,
+    });
+    accessToken = data['accessToken'] as String?;
+    currentUser = data['user'] as Map<String, dynamic>?;
+  }
+
+  static Future<void> register({
+    required String name,
+    required String email,
+    required String password,
+    required String nim,
+    required String university,
+    required String faculty,
+    required String studyProgram,
+  }) async {
+    final data = await _post('/auth/register', {
+      'name': name,
+      'email': email,
+      'password': password,
+      'nim': nim,
+      'university': university,
+      'faculty': faculty,
+      'studyProgram': studyProgram,
+    });
+    accessToken = data['accessToken'] as String?;
+    currentUser = data['user'] as Map<String, dynamic>?;
+  }
+
+  static Future<void> logout() async {
+    if (accessToken != null) {
+      await http
+          .post(
+            Uri.parse('${ApiConfig.url}/auth/logout'),
+            headers: {'Authorization': 'Bearer $accessToken'},
+          )
+          .catchError((_) => http.Response('', 500));
+    }
+    accessToken = null;
+    currentUser = null;
+  }
+
+  static Future<Map<String, dynamic>> _post(
+    String path,
+    Map<String, dynamic> body,
+  ) async {
+    final response = await http.post(
+      Uri.parse('${ApiConfig.url}$path'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode(body),
     );
-    initialized = true;
+    final decoded = jsonDecode(response.body) as Map<String, dynamic>;
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      throw Exception(decoded['message'] ?? 'Request gagal.');
+    }
+    return decoded['data'] as Map<String, dynamic>;
   }
 }
 
@@ -406,7 +464,7 @@ class _AuthScreenState extends State<AuthScreen> {
   @override
   void initState() {
     super.initState();
-    if (LabinBackend.client?.auth.currentSession != null) {
+    if (LabinBackend.accessToken != null) {
       WidgetsBinding.instance.addPostFrameCallback((_) => _openMain());
     }
   }
@@ -453,7 +511,7 @@ class _AuthScreenState extends State<AuthScreen> {
               onSelected: (index) => setState(() => register = index == 1),
             ),
             const SizedBox(height: 12),
-            SupabaseConnectionBanner(configured: LabinBackend.initialized),
+            BackendConnectionBanner(configured: LabinBackend.initialized),
             const SizedBox(height: 18),
             if (!register) ...[
               AppTextField(
@@ -585,7 +643,7 @@ class _AuthScreenState extends State<AuthScreen> {
   Future<void> _login() async {
     if (!LabinBackend.initialized) {
       _showMessage(
-        'Supabase belum dikonfigurasi. Isi LABIN_SUPABASE_URL dan LABIN_SUPABASE_PUBLISHABLE_KEY.',
+        'Backend belum aktif. Jalankan npm run dev, lalu buka ulang app.',
       );
       return;
     }
@@ -602,10 +660,7 @@ class _AuthScreenState extends State<AuthScreen> {
     }
 
     await _runAuthAction(() async {
-      await LabinBackend.client!.auth.signInWithPassword(
-        email: email,
-        password: password,
-      );
+      await LabinBackend.login(email: email, password: password);
       _openMain();
     });
   }
@@ -613,7 +668,7 @@ class _AuthScreenState extends State<AuthScreen> {
   Future<void> _register() async {
     if (!LabinBackend.initialized) {
       _showMessage(
-        'Supabase belum dikonfigurasi. Register hanya bisa berjalan setelah backend aktif.',
+        'Backend belum aktif. Jalankan npm run dev, lalu buka ulang app.',
       );
       return;
     }
@@ -642,53 +697,29 @@ class _AuthScreenState extends State<AuthScreen> {
     }
 
     await _runAuthAction(() async {
-      final response = await LabinBackend.client!.auth.signUp(
+      await LabinBackend.register(
+        name: name,
         email: email,
         password: password,
-        data: {
-          'name': name,
-          'nim': nim,
-          'university': universityController.text.trim(),
-          'faculty': facultyController.text.trim(),
-          'study_program': programController.text.trim(),
-          'role': 'student',
-        },
+        nim: nim,
+        university: universityController.text.trim(),
+        faculty: facultyController.text.trim(),
+        studyProgram: programController.text.trim(),
       );
-
-      if (response.session != null) {
-        _openMain();
-        return;
-      }
-
-      setState(() => register = false);
-      _showMessage(
-        'Akun berhasil dibuat. Cek email untuk verifikasi, lalu login.',
-      );
+      _openMain();
     });
   }
 
   Future<void> _loginWithGoogle() async {
-    if (!LabinBackend.initialized) {
-      _showMessage('Google OAuth butuh konfigurasi Supabase.');
-      return;
-    }
-
-    await _runAuthAction(() async {
-      await LabinBackend.client!.auth.signInWithOAuth(
-        OAuthProvider.google,
-        redirectTo: 'io.supabase.labin://login-callback/',
-      );
-    });
+    _showMessage('Google login belum diaktifkan di backend Node.');
   }
 
   Future<void> _runAuthAction(Future<void> Function() action) async {
     setState(() => loading = true);
     try {
       await action();
-    } on AuthException catch (error) {
-      _showMessage(error.message);
     } catch (error) {
-      _showMessage('Gagal terhubung ke Supabase: $error');
+      _showMessage(error.toString().replaceFirst('Exception: ', ''));
     } finally {
       if (mounted) setState(() => loading = false);
     }
@@ -1694,9 +1725,7 @@ class ProfileScreen extends StatelessWidget {
   }
 
   Future<void> _signOut(BuildContext context) async {
-    if (LabinBackend.initialized) {
-      await LabinBackend.client!.auth.signOut();
-    }
+    await LabinBackend.logout();
     if (!context.mounted) return;
     Navigator.of(context).pushAndRemoveUntil(
       MaterialPageRoute(builder: (_) => const AuthScreen()),
@@ -2442,8 +2471,8 @@ class AppTextField extends StatelessWidget {
   }
 }
 
-class SupabaseConnectionBanner extends StatelessWidget {
-  const SupabaseConnectionBanner({super.key, required this.configured});
+class BackendConnectionBanner extends StatelessWidget {
+  const BackendConnectionBanner({super.key, required this.configured});
 
   final bool configured;
 
@@ -2451,8 +2480,8 @@ class SupabaseConnectionBanner extends StatelessWidget {
   Widget build(BuildContext context) {
     final color = configured ? LabinTheme.success : LabinTheme.warning;
     final text = configured
-        ? 'Backend Supabase aktif. Login dan register memakai akun asli.'
-        : 'Backend belum aktif. Jalankan app dengan URL dan publishable key Supabase.';
+        ? 'Backend Node aktif. Login dan register memakai akun database.'
+        : 'Backend belum aktif. Jalankan npm run dev di laptop.';
 
     return Container(
       padding: const EdgeInsets.all(12),
