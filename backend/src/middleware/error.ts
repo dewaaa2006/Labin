@@ -3,6 +3,13 @@ import { Prisma } from '@prisma/client';
 import { ZodError } from 'zod';
 import { AppError } from '../utils/api.js';
 
+const databaseUrlPlaceholders = ['PROJECT_REF', 'YOUR_DB_PASSWORD', 'REGION'];
+
+function hasPlaceholderDatabaseUrl() {
+  const databaseUrl = process.env.DATABASE_URL ?? '';
+  return databaseUrlPlaceholders.some((placeholder) => databaseUrl.includes(placeholder));
+}
+
 export const notFound = () => {
   throw new AppError(404, 'Endpoint tidak ditemukan.');
 };
@@ -31,6 +38,13 @@ export const errorHandler: ErrorRequestHandler = (error, _req, res, _next) => {
     if (error.code === 'P2025') {
       return res.status(404).json({ success: false, message: 'Data tidak ditemukan.' });
     }
+  }
+
+  if (hasPlaceholderDatabaseUrl()) {
+    return res.status(503).json({
+      success: false,
+      message: 'DATABASE_URL Supabase belum valid. Ganti PROJECT_REF, YOUR_DB_PASSWORD, dan REGION dengan connection string asli dari tombol Connect di Supabase.',
+    });
   }
 
   console.error(error);
