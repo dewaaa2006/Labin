@@ -3,7 +3,7 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
@@ -121,7 +121,7 @@ model Room {
   capacity    Int
   floor       String?
   building    String?
-  facilities  String       @default("[]")
+  facilities  String[]
   description String?
   imageUrl    String?
   isActive    Boolean      @default(true)
@@ -178,7 +178,7 @@ model Announcement {
   isPinned    Boolean              @default(false)
   isPublished Boolean              @default(true)
   authorId    String
-  attachments String               @default("[]")
+  attachments String[]
   viewCount   Int                  @default(0)
   publishedAt DateTime?
   createdAt   DateTime             @default(now())
@@ -203,7 +203,7 @@ model DamageReport {
   description    String
   urgency        Urgency
   status         ReportStatus @default(RECEIVED)
-  photos         String       @default("[]")
+  photos         String[]
   technicianNote String?
   resolvedAt     DateTime?
   createdAt      DateTime     @default(now())

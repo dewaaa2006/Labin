@@ -43,7 +43,7 @@ router.post('/', upload.array('photos', 5), asyncHandler(async (req, res) => {
   }).parse(req.body);
   const files = (req.files as Express.Multer.File[] | undefined) ?? [];
   ok(res, await prisma.damageReport.create({
-    data: { ...body, userId: req.user!.id, trackingId: generateTracking('RPT'), photos: JSON.stringify(files.map((file) => `/uploads/${file.filename}`)) },
+    data: { ...body, userId: req.user!.id, trackingId: generateTracking('RPT'), photos: files.map((file) => `/uploads/${file.filename}`) },
   }));
 }));
 

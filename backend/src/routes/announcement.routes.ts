@@ -42,7 +42,7 @@ router.post('/', requireAuth, requireRole(Role.ADMIN), upload.array('attachments
   const body = schema.parse(req.body);
   const files = (req.files as Express.Multer.File[] | undefined) ?? [];
   const item = await prisma.announcement.create({
-    data: { ...body, authorId: req.user!.id, attachments: JSON.stringify(files.map((file) => `/uploads/${file.filename}`)), publishedAt: body.isPublished ? new Date() : null },
+    data: { ...body, authorId: req.user!.id, attachments: files.map((file) => `/uploads/${file.filename}`), publishedAt: body.isPublished ? new Date() : null },
   });
   if (item.isPublished) await broadcastAnnouncement(item.id, item.title);
   ok(res, item);

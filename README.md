@@ -39,19 +39,28 @@ JWT_ACCESS_SECRET="change-me"
 JWT_REFRESH_SECRET="change-me-too"
 ```
 
-### 3. Database Lokal, Paling Gampang
+### 3. Supabase Database
 
-Backend dev sekarang memakai SQLite lokal supaya langsung jalan tanpa XAMPP, PostgreSQL, atau Docker.
+Backend web memakai Supabase sebagai PostgreSQL database.
 
-```powershell
-npm run db:sqlite
+Ambil connection string dari Supabase Dashboard:
+
+Project Settings -> Database -> Connection string -> Transaction pooler.
+
+Isi `backend/.env`:
+
+```text
+DATABASE_URL="postgresql://postgres.PROJECT_REF:YOUR_DB_PASSWORD@aws-0-REGION.pooler.supabase.com:6543/postgres?pgbouncer=true&connection_limit=1"
 ```
 
-Command itu membuat `backend/prisma/dev.db` dan mengisi seed data.
+Lalu jalankan:
 
-### 4. Database PostgreSQL Opsional
+```powershell
+npm run db:migrate
+npm run seed
+```
 
-Kalau nanti mau kembali ke PostgreSQL production, ubah `backend/prisma/schema.prisma` provider ke `postgresql`, isi `DATABASE_URL`, lalu jalankan migrate Prisma.
+Catatan: password di URL adalah database password Supabase, bukan password login akun Supabase.
 
 Kalau pakai Docker:
 
